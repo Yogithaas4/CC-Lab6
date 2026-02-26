@@ -21,9 +21,9 @@ pipeline {
                 docker rm -f backend1 backend2 || true
 
                 # Start backend containers
-                docker run -d --name backend1 --network lab-network backend-app
-                docker run -d --name backend2 --network lab-network backend-app
-
+                
+                docker run -d --name backend1 --hostname backend1 --network lab-network backend-app
+                docker run -d --name backend2 --hostname backend2 --network lab-network backend-app
                 # Wait for containers to fully start
                 sleep 5
                 '''
