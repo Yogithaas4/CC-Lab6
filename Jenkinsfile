@@ -14,17 +14,26 @@ pipeline {
         stage('Deploy Backend Containers') {
             steps {
                 sh '''
-                # Create network if not exists
+                # Create Docker network (ignore if exists)
                 docker network create lab-network || true
 
-                # Remove old containers if any
+                # Remove old backend containers
                 docker rm -f backend1 backend2 || true
 
-                # Start backend containers
-                
-                docker run -d --name backend1 --hostname backend1 --network lab-network backend-app
-                docker run -d --name backend2 --hostname backend2 --network lab-network backend-app
-                # Wait for containers to fully start
+                # Run backend containers with hostname set
+                docker run -d \
+                    --name backend1 \
+                    --hostname backend1 \
+                    --network lab-network \
+                    backend-app
+
+                docker run -d \
+                    --name backend2 \
+                    --hostname backend2 \
+                    --network lab-network \
+                    backend-app
+
+                # Wait for containers to initialize
                 sleep 5
                 '''
             }
@@ -36,18 +45,20 @@ pipeline {
                 # Remove old nginx container
                 docker rm -f nginx-lb || true
 
-                # Start nginx on same network
-                docker run -d --name nginx-lb \
-                --network lab-network \
-                -p 80:80 nginx
+                # Run nginx container on same network
+                docker run -d \
+                    --name nginx-lb \
+                    --network lab-network \
+                    -p 80:80 \
+                    nginx
 
-                # Wait for nginx to initialize
+                # Wait for nginx startup
                 sleep 3
 
-                # Copy configuration file
+                # Copy updated nginx config
                 docker cp nginx/default.conf nginx-lb:/etc/nginx/conf.d/default.conf
 
-                # Reload nginx configuration
+                # Reload nginx
                 docker exec nginx-lb nginx -s reload
 
                 # Wait to ensure routing works
